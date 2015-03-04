@@ -1,3 +1,15 @@
+# data folders
+drivers/
+feature_data/
+
+# R History files
+.Rhistory
+.Rapp.history
+.Rdata
+
+# RStudio files
+.Rproj.user/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
