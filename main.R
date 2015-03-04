@@ -22,7 +22,7 @@ if(!exists("cl")) { # to avoid mistakenly re-running the code
 # number of negative samples
 nb.neg.samples <- 200
 # GLMNET: elasticnet mixing param (0 is Ridge, 1 is Lasso)
-alpha <- 0
+alpha <- 0.5
 
 # global vars
 drivers = list.files("drivers")
@@ -75,14 +75,14 @@ pred <- foreach(data=train.data, .combine=rbind, .packages="glmnet") %dopar% {
   pred <- predict(fit, data[1:200,], type="response")
 }
 # display run time
-t_pred <- proc.time()-t; t
+t_pred <- proc.time()-t_pred; t_pred
 
 # generate submission
 colnames(pred) <- "prob"
 # generates the index as specified by kaggle
 submission_index <- unlist(llply(drivers, function(d) paste(d, 1:200, sep="_")))
 submission= data.frame(driver_trip=submission_index, prob=pred, stringsAsFactors = F)
-write.csv(submission, "submissions/featv1_cvglmnet2.csv", row.names=F, quote=F)
+write.csv(submission, "submissions/featv1_cvglmnet4_alpha1.csv", row.names=F, quote=F)
 
 # This should be run when you're done
 # stopCluster(cl)
