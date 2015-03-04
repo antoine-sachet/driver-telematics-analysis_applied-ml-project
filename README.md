@@ -7,6 +7,10 @@ The data should be in a folder named "driver", i.e. the first trip of the first 
 
 You should install missing package with |install.packages("package")|.
 
+The feature extraction takes a little 10 minutes on my computer. It is very challenging for the disk so be careful (lots of simultaneous access).
+
+Training and applying the model takes a little more than 6 minutes on my computer.  
+
 Feature engineering ideas
 =========================
 

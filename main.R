@@ -15,7 +15,7 @@ source("feature_extraction.R")
 set.seed(1)
 if(!exists("cl")) { # to avoid mistakenly re-running the code
   # CHANGE HERE TO ADAPT THE NUMBER OF WORKERS AND THE NUMBER OF CORES
-  cl <- makeCluster(16)
+  cl <- makeCluster(6)
   registerDoParallel(cl, cores=4)
 }
 ##### Settings to tune #####
@@ -28,47 +28,60 @@ alpha <- 0
 drivers = list.files("drivers")
 labels <- as.factor(c(rep(1,200), rep(0,200)))
 
-# Loading data and converting it to feature space directly
-# takes some time
-feature_data <- llply(drivers, function(driver) laply(1:200, .fun=function(i)
-  extractFeatures(
-    array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))))))
+# Read i-th trip of specified driver from disk
+# Convert it to feature space directly
+readFeatures <- function(driver, i) {
+  # this is useful if readFeatures is executed in parallel in different environments
+  # The flag FEATURE_EXTRACTION_LOADED is set at the end of feature_extraction.R
+  if (!exists("FEATURE_EXTRACTION_LOADED"))
+    source("feature_extraction.R")
+  extractFeatures(array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))))
+}
+
+# list of all variables needed in the feature_data loop
+export.var <- c("readFeatures", "extractFeatures", "speedDistribution")
+
+
+# for every driver, for i=1:200, apply readFeature to the i-th trip
+# Only the features are in memory afterwards, not the data which would be huge.
+# this is parallelised over the drivers only
+t_feat <- proc.time()
+# should take about 10 minutes...
+feature_data <- llply(drivers, .parallel=TRUE, .paropts=list(.export=export.var),
+                      .fun=function(driver) laply(1:200, .fun=function(i) readFeatures(driver, i)))
+t_feat <- proc.time()-t_feat; t_feat
+
 
 # building the training data for each driver. It is composed of:
 # - the trips from the driver (200 positive samples)
 # - random trips from random other drivers (nb.neg.samples negative samples)
-
 train.data <- llply(1:length(feature_data), .fun=function(i) {
   # creating negative sample by sampling from other drivers
   randomDrivers <- sample((1:length(drivers))[-i], size = nb.neg.samples, replace=TRUE)
   # samples are directly in feature space
   neg.samples <- laply(randomDrivers, .fun=function(x) feature_data[[x]][sample(200,1),])
   samples <- rbind(feature_data[[i]],neg.samples)
-  save(samples, file.path("feature_data", as.character(i)))
   })
 
 # for timing
-t <- proc.time()
+t_pred <- proc.time()
 # Each driver analysis is done in parallel by a different thread.
-# Each thread is in its own environment, so we have to redefine everything.
-pred <- foreach(i=1:length(drivers), .combine=rbind) %dopar% {
-  # "Require" loads the library if it is not already done.
-  require("glmnet")
-  # this loads "samples" in memory
-  load(file.path("feature_data", as.character(i)))
-  # fitting the model
-  fit <- cv.glmnet(x=samples, y=labels, alpha=alpha, standardize=FALSE, family="binomial")
+# Each thread is in its own environment and only simple global variables are passed.
+pred <- foreach(data=train.data, .combine=rbind, .packages="glmnet") %dopar% {
+  # fitting the model (using cross-validation to tune lambda parameter)
+  fit <- cv.glmnet(x=data, y=labels, alpha=alpha,
+                   standardize=FALSE, family="binomial", type.measure="auc")
   # making the prediction. type="response" gives probabilities
-  pred <- predict(fit, samples[1:200,], type="response")
+  pred <- predict(fit, data[1:200,], type="response")
 }
 # display run time
-t <- proc.time()-t; t
+t_pred <- proc.time()-t; t
 
 # generate submission
 colnames(pred) <- "prob"
 # generates the index as specified by kaggle
 submission_index <- unlist(llply(drivers, function(d) paste(d, 1:200, sep="_")))
-submission= data.frame(driver_trip=submission_index, prob=1-pred, stringsAsFactors = F)
+submission= data.frame(driver_trip=submission_index, prob=pred, stringsAsFactors = F)
 write.csv(submission, "submissions/featv1_cvglmnet2.csv", row.names=F, quote=F)
 
 # This should be run when you're done

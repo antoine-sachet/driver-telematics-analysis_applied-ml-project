@@ -1,3 +1,5 @@
+FEATURE_EXTRACTION_LOADED <- TRUE
+
 extractFeatures <- function(trip) {
   speedDistribution(trip)
 }
