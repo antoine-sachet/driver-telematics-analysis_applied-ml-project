@@ -1,5 +1,5 @@
-driver = list.files("drivers")[1]
-i <- 2
+driver <- 1
+i <- 1
 
 trip <- read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))
 plot(trip)
@@ -25,13 +25,28 @@ ggplot(trip)+
 
 ggplot(trip)+
   geom_point(aes(x=t, y=curv), color="blue")+
-  geom_point(aes(x=t, y=speed), color="red")+
+  geom_point(aes(x=t, y=speed), color="red")
   geom_point(aes(x=t, y=acc), color="green")
 
+require("foreach")
+
 brake <- abs(trip$acc[trip$acc<0])
-plot(brake)
+#faster than quantile to get the 90% quantile
+brake.breakpoint <- quantile(brake, seq(0,1,0.1))[10]
+brake.hard.ind <- which(brake>brake.breakpoint)
+
+library("NbClust")
+NbClust(cbind(brake), brake.episode), method="kmeans")
+
+hist(trip$curv)
+ecdf(trip$curv)(0)
+
+s <- quantile(speed, probs=seq(0,1,0.1))
+hist(speed, breaks=20)
+plot(speed)
+plot(s)
+
 
 plot(abs(fft(trip$speed)))
-
 tmp <- spectrum(trip$speed)
 convolve(trip1$speed, trip2$speed)

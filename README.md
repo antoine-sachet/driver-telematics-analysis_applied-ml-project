@@ -25,3 +25,8 @@ http://cran.r-project.org/web/packages/adehabitatLT/vignettes/adehabitatLT.pdf
 
 * I am investigating the use of a fourier transform of the speed (my signal processing background finally pays off :p)
 
+* windowed mean speed instead of instanteneous speed
+
+* consider length of trip and duration of trip
+
+* See http://www.cise.ufl.edu/~mschneid/Research/papers/LS12IWGS.pdf for idea for a kernel measure trip similarity!
