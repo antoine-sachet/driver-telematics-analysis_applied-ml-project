@@ -35,6 +35,7 @@ readFeatures <- function(driver, i) {
   # The flag FEATURE_EXTRACTION_LOADED is set at the end of feature_extraction.R
   if (!exists("FEATURE_EXTRACTION_LOADED"))
     source("feature_extraction.R")
+  # note that we load the data in an array which is cheaper to process than a table
   extractFeatures(array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))))
 }
 

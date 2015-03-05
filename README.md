@@ -30,3 +30,5 @@ http://cran.r-project.org/web/packages/adehabitatLT/vignettes/adehabitatLT.pdf
 * consider length of trip and duration of trip
 
 * See http://www.cise.ufl.edu/~mschneid/Research/papers/LS12IWGS.pdf for idea for a kernel measure trip similarity!
+
+* problem with dimensionality of features (good features diluted)
