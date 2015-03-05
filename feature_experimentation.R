@@ -1,9 +1,9 @@
 driver <- 1
 i <- 1
-
-trip <- read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))
+trip <- array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv"))))
 plot(trip)
 
+extractFeatures(trip)
 # computing velocity and acceleration (padding wth 0 at the end)
 trip$dx <- c(diff(trip$x),0)
 trip$dy <- c(diff(trip$y),0)
@@ -50,3 +50,15 @@ plot(s)
 plot(abs(fft(trip$speed)))
 tmp <- spectrum(trip$speed)
 convolve(trip1$speed, trip2$speed)
+
+library("quantmod")
+library(ggplot2)
+plotPeak <- function(y, ...) {
+  peak <- rep(0,length(y))
+  peak[findPeaks(y, ...)] <- 1
+  print(sum(peak))
+  data <- data.frame(x=1:length(y), y=y,peak=peak)
+  ggplot(data)+geom_point(aes(x=x,y=y,color=peak))
+}
+
+plotPeak(curv)
