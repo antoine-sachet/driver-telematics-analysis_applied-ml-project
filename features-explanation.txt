@@ -1,0 +1,8 @@
+feature: explanation
+1: length (sum of diff at each point)
+2-11: decile of speed (quantile at 10%, 20%, ... 100%)
+12-21: decile of positive (>=0) acceleration
+22-31: decile of negative (<0) acceleration
+32: duration of trip (length of the csv)
+33-35: number of right turns in first third, second third and third third of the trip
+36-38: number of left turns in in first third, second third and third third of the trip

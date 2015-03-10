@@ -20,13 +20,13 @@ if(!exists("cl")) { # to avoid mistakenly re-running the code
 }
 ##### Settings to tune #####
 # number of negative samples
-nb.neg.samples <- 200
+nb.neg.samples <- 400
 # GLMNET: elasticnet mixing param (0 is Ridge, 1 is Lasso)
 alpha <- 0.5
 
 # global vars
 drivers = list.files("drivers")
-labels <- as.factor(c(rep(1,200), rep(0,200)))
+labels <- as.factor(c(rep(1,200), rep(0,nb.neg.samples)))
 
 # Read i-th trip of specified driver from disk
 # Convert it to feature space directly
@@ -35,23 +35,26 @@ readFeatures <- function(driver, i) {
   # The flag FEATURE_EXTRACTION_LOADED is set at the end of feature_extraction.R
   if (!exists("FEATURE_EXTRACTION_LOADED"))
     source("feature_extraction.R")
+  print(paste0(driver, "_", i))
   # note that we load the data in an array which is cheaper to process than a table
   extractFeatures(array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv")))))
 }
-
-# list of all variables needed in the feature_data loop
-export.var <- c("readFeatures", "extractFeatures", "speedDistribution")
-
 
 # for every driver, for i=1:200, apply readFeature to the i-th trip
 # Only the features are in memory afterwards, not the data which would be huge.
 # this is parallelised over the drivers only
 t_feat <- proc.time()
 # should take about 10 minutes...
-feature_data <- llply(drivers, .parallel=TRUE, .paropts=list(.export=export.var),
-                      .fun=function(driver) laply(1:200, .fun=function(i) readFeatures(driver, i)))
+feature_data <- llply(drivers, .progress="text", .parallel=FALSE,
+                      .paropts=list(.export=, .packages="quantmod"),
+                      .fun=function(driver) {laply(1:200, .fun=function(i) readFeatures(driver, i))})
 t_feat <- proc.time()-t_feat; t_feat
 
+### saving the features to disk to avoid recomputing
+# feature_data_table <- foreach(x=feature_data, .combine=rbind) %do% x
+# submission_index <- unlist(llply(drivers, function(d) paste(d, 1:200, sep="_")))
+# feature_data_table <- data.frame(driver_trip=submission_index, feature=feature_data_table)
+# write.csv(feature_data_table, file="features.csv")
 
 # building the training data for each driver. It is composed of:
 # - the trips from the driver (200 positive samples)
@@ -71,7 +74,7 @@ t_pred <- proc.time()
 pred <- foreach(data=train.data, .combine=rbind, .packages="glmnet") %dopar% {
   # fitting the model (using cross-validation to tune lambda parameter)
   fit <- cv.glmnet(x=data, y=labels, alpha=alpha,
-                   standardize=FALSE, family="binomial", type.measure="auc")
+                   standardize=FALSE, family="binomial", type.measure="class", nfolds=50)
   # making the prediction. type="response" gives probabilities
   pred <- predict(fit, data[1:200,], type="response")
 }
@@ -83,7 +86,7 @@ colnames(pred) <- "prob"
 # generates the index as specified by kaggle
 submission_index <- unlist(llply(drivers, function(d) paste(d, 1:200, sep="_")))
 submission= data.frame(driver_trip=submission_index, prob=pred, stringsAsFactors = F)
-write.csv(submission, "submissions/featv1_cvglmnet4_alpha1.csv", row.names=F, quote=F)
+write.csv(submission, "submissions/featv2_cvglmnet4_alpha05.csv", row.names=F, quote=F)
 
 # This should be run when you're done
 # stopCluster(cl)

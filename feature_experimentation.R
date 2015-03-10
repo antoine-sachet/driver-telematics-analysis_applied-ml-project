@@ -1,5 +1,5 @@
 driver <- 1
-i <- 1
+i <- 90
 trip <- array(read.csv(file.path("drivers", as.character(driver), paste0(i, ".csv"))))
 plot(trip)
 
