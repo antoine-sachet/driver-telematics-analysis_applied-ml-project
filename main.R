@@ -6,7 +6,7 @@ library("plyr")
 library("foreach")
 library("doParallel")
 # predictive algo lib
-library("glmnet")
+library("e1071")
 
 # Running file defining feature extraction functions
 source("feature_extraction.R")
@@ -21,11 +21,9 @@ if(!exists("cl")) { # to avoid mistakenly re-running the code
 ##### Settings to tune #####
 # number of negative samples
 nb.neg.samples <- 400
-# GLMNET: elasticnet mixing param (0 is Ridge, 1 is Lasso)
-alpha <- 0.5
 
 # global vars
-drivers = list.files("drivers")
+drivers = list.files("drivers")[1:10]
 labels <- as.factor(c(rep(1,200), rep(0,nb.neg.samples)))
 
 # Read i-th trip of specified driver from disk
@@ -69,20 +67,18 @@ train.data <- llply(1:length(feature_data), .fun=function(i) {
 
 # for timing
 t_pred <- proc.time()
-# Each driver analysis is done in parallel by a different thread.
-# Each thread is in its own environment and only simple global variables are passed.
-pred <- foreach(data=train.data, .combine=rbind, .packages="glmnet") %dopar% {
+# driver analysis is done in parallel.
+pred <- foreach(data=train.data, .combine=c,
+                .packages="e1071") %dopar% {
   # fitting the model (using cross-validation to tune lambda parameter)
-  fit <- cv.glmnet(x=data, y=labels, alpha=alpha,
-                   standardize=FALSE, family="binomial", type.measure="class", nfolds=50)
+  fit <- svm(x=data, y=labels, type="C-classification", probability=TRUE)
   # making the prediction. type="response" gives probabilities
-  pred <- predict(fit, data[1:200,], type="response")
+  pred <- predict(fit, data[1:200,], probability=TRUE)
+  prob <- attr(pred, "probabilities")[,1]
 }
 # display run time
 t_pred <- proc.time()-t_pred; t_pred
 
-# generate submission
-colnames(pred) <- "prob"
 # generates the index as specified by kaggle
 submission_index <- unlist(llply(drivers, function(d) paste(d, 1:200, sep="_")))
 submission= data.frame(driver_trip=submission_index, prob=pred, stringsAsFactors = F)
