@@ -38,9 +38,9 @@ For each trip, a number of features (described below) are computed. Only these f
 For each driver, we create a labeled dataset of trips he did take and didn't take using the following method:
 
 * We make the assumption that the 200 trips of the driver were indeed taken by him and label them 1. These from the positive samples. 
-Some of the trips (the one we want to find) were misclassified.
+Some of the trips (the ones we want to find) were misclassified.
 
-* We sample 200 (but this is adjustable) random trips from random other drivers and label 0. These are the negative sampàles, the trips our driver did not take.
+* We sample 200 (but this is adjustable) random trips from random other drivers and label 0. These are the negative samples, the trips our driver did not take.
 
 For each driver, a SVM is trained on this labeled dataset. It is then used on the positive samples only, the hope being that it will pick up which of the trips were misclassified.
 
@@ -68,9 +68,11 @@ These functions return, for a given trip, an array containing 38 double:
 
 * 36-38: number of left turns in in first third, second third and third third of the trip
 
-Once computed, the features are available in the variable feature_data, a list of 2736 arrays of dimension 200x38.
+Once computed, the features are available in the variable feature_data, a list of 2736 arrays of dimension 200x38. 
+As it takes quite a long time to generate the features, they are saved to disk in a csv.
 
 Author
 ======
 
-Antoine Sachet, 17/03/2015
+Antoine Sachet
+
