@@ -1,9 +1,9 @@
 Driver Telematics Analysis
 ==========================
 
-This is a Rstudio project containing scripts to perform predictive analysis for the Kaggle competition ["Driver Telematics Analysis"](http://www.kaggle.com/c/axa-driver-telematics-analysis).
+These R scripts perform predictive analysis for the Kaggle competition ["Driver Telematics Analysis"](http://www.kaggle.com/c/axa-driver-telematics-analysis).
 
-The data should be in a folder named "driver", i.e. the first trip of the first driver should be in "path.to.folder/driver/1/1.csv".
+The data should be in a folder named "driver", i.e. the first trip of the first driver should be in "path.to.folder/driver/1/1.csv". 
 
 Required packages
 =================
@@ -54,13 +54,19 @@ It is called in main.R via readFeatures(driver, trip).
 
 These functions return, for a given trip, an array containing 38 double: 
 
-1: length of trip (distance)
-2-11: decile of speed (quantile of the speed distribution at 10%, 20%, ... 100%)
-12-21: decile of positive (>=0) acceleration
-22-31: decile of negative (<0) acceleration
-32: duration of trip (time)
-33-35: number of right turns in first third, second third and third third of the trip
-36-38: number of left turns in in first third, second third and third third of the trip
+* 1: length of trip (distance)
+
+* 2-11: decile of speed (quantile of the speed distribution at 10%, 20%, ... 100%)
+
+* 12-21: decile of positive (>=0) acceleration
+
+* 22-31: decile of negative (<0) acceleration
+
+* 32: duration of trip (time)
+
+* 33-35: number of right turns in first third, second third and third third of the trip
+
+* 36-38: number of left turns in in first third, second third and third third of the trip
 
 Once computed, the features are available in the variable feature_data, a list of 2736 arrays of dimension 200x38.
 
