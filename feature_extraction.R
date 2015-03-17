@@ -1,7 +1,19 @@
-library("quantmod")
+# This code can be found at
+# https://github.com/antoine-sachet/driver-telematics-analysis_applied-ml-project
+# along with some explanations
+#
+# Author: Antoine Sachet
+# Date: 17/03/2015
 
-FEATURE_EXTRACTION_LOADED <- TRUE
+# only for the "findPeaks" function
+require("quantmod")
 
+# set to TRUE at the end of the file
+FEATURE_EXTRACTION_LOADED <- FALSE
+
+# takes a trip and returns the vector of features computed for this trip
+# This is the function to modify to add new features
+# just add the computations in the body and the results in the "return"
 extractFeatures <- function(trip) {
   if(any(is.na(trip)))
     write.csv(trip, file="shit.csv")
@@ -27,6 +39,10 @@ extractFeatures <- function(trip) {
   return(c(kin, duration, nb.turns))
 }
 
+# Takes derivative and 2d derivative of d and y
+# Returns
+# length of journey (distance)
+# deciles of speed, positive acceleration and negative acceleration
 getKinetics <- function(dx, dy, d2x, d2y)
 {
   speed <- sqrt(dx**2+dy**2)
@@ -43,9 +59,14 @@ getKinetics <- function(dx, dy, d2x, d2y)
     unlist(quantile(speed, seq(0.1, 1, by = 0.1), names=F)),
     unlist(quantile(pos.acc, seq(0.1, 1, by = 0.1), names=F)),
     unlist(quantile(neg.acc, seq(0.1, 1, by = 0.1), names=F))
-    )
+  )
 }
 
+# Takes the signed curvature as computed in "extractFeatures"
+# Splits the trip in three equal parts
+# Returns:
+# number of left turns on the 3 parts
+# number of right turns on the three parts
 getTurns <- function(sgn.curv) {
   pos.curv.ind <- sgn.curv>0
   pos.curv <- sgn.curv[pos.curv.ind]
@@ -62,19 +83,12 @@ getTurns <- function(sgn.curv) {
   laply(split.curv, function(x) {
     res <- 0
     if (any(is.na(x)) | length(x)==0) {
-        res <- 0
-      } else {
-      res <- tryCatch(length(findPeaks(x, thresh=quantile(x,0.8))),
-                      error = function(e) {print(e)
-                                         write.csv(sgn.curv, file="shit.csv")},
-                      warning = function(w) {print(w)
-                                           write.csv(sgn.curv, file="shit.csv")}
-      )
-      }
-      return(res)
+      res <- 0
+    } else {
+      res <- length(findPeaks(x, thresh=quantile(x,0.8)))
+    }
+    return(res)
   })
 }
 
-getLongestLine <- function(sgn.curv) {
-  line <- sgn.curv<quantile(sgn.curv, 0.2)
-}
+FEATURE_EXTRACTION_LOADED <- TRUE
